@@ -1,0 +1,39 @@
+{
+    "site_name": "Seated",
+    "target_url": "https://go.seated.com/tour-events/9eb887de-b4d6-4544-96e7-21fa006e5cf3",
+
+    "dolphin": {
+        "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiODJiMGEzNjRkZGQyMTdiZTkwZjE4NjU0YmNmYjVlOTBmZDljODc5ZTgyMjQ4MDNjZTA5M2U1M2U5ZDQwMDhjZGU0ZGFiNDY5MjRlMDVmNmIiLCJpYXQiOjE3NjAxMDExNjMuOTUyOTU1LCJuYmYiOjE3NjAxMDExNjMuOTUyOTU5LCJleHAiOjE3OTE2MzcxNjMuOTQyNDA4LCJzdWIiOiI0NTkzMjk4Iiwic2NvcGVzIjpbXSwidGVhbV9pZCI6NDQ5ODM3OCwidGVhbV9wbGFuIjoiYmFzZSIsInRlYW1fcGxhbl9leHBpcmF0aW9uIjoxNzYwMzAzOTA0fQ.F8cDKRhJCQn-hL4dCZ1Me0UZ6YI3gOowCU18QwvSjWW2xWGBu0gk-jo2AUXA63997TJkbYLgi_coHjXwFa6sHbWckKRVxGpLSJjnhl6btM3TMrFekDlvHmTSSisXwyBSYr82-hCCo5HyYwwoHXRMeExuo0gXEW7qY1Tkprv2voPoHe_CiRnCI-OE86we5kiM5ShgrWRpmlyo-PsQyNJcRQnNVWI877d7Qok9R-WEAnfUeXslfyEtybgVi_lcQ6oCqOHK3ZzHjO_TZNoG7kEMUKjnpfnVtcgDzJ4mcCckaZFKnwN887TvxvDVCkdbBfZykRLSYmHO7DWdnXFQVjl1wa0fKOaSku5T4rvhVYrCeEIKYJcA_6oyVHMg6ClxfdWBRbMFW20VaMFxWQ0FZ1YEiKnYeDbIfKIgLa_04mflqaG6jANhqcjshVLIXJwnIYhj-O7P4JxQcykAIbL_iauIXozQ93_7eOck3Mt-cZM9x1Fs6pHBK_9rMhII_p2c1KW1KV1UYKJLSipd-l76MZORxBhrX82R4gf0Qhgl9w9jE63qI0IfVoJAthXihgFKZfDCnoj19S0lBbvzD4ouACzyeMSv6BNWMUJXp-nzVsf4awoVMIe0KAO7t8iR3QLj1dNPMYI8EQCVZsmtum4-76r--4ZPqIDTaz93WSU-yQj8kMY",
+        "remote_api_url": "https://dolphin-anty-api.com",
+        "api_url": "http://localhost:3001/v1.0"
+    },
+
+    "twilio": {
+        "account_sid": "AC55c05dd8d99b317927f1bed97c77d41e",
+        "auth_token": "176b89c7d73c50b93046ac6fd03a1693",
+        "service_sid": "VAcc553657dccd1bb87ba69c3acf6f3682"
+    },
+
+    "files": {
+        "accounts": "accounts.csv",
+        "proxies": "proxies.txt"
+    },
+
+    "automation": {
+        "threads": 1,
+        "timeout_seconds": 45,
+        "sms_timeout_seconds": 90
+    },
+
+    "discord": {
+        "finished_webhook": "https://discord.com/api/webhooks/1374518609799544913/CF41Y2SeD5ebTTcwoNGww8RX3tkuNX5CeDqq6AMb6WYwJMhBAj_U0CeQo4fnZ09SYldu"
+    },
+
+    "_notes": {
+        "accounts.csv": "Kolommen: email,entered,timestamp. Gebruik 'nee' voor nog te verwerken accounts.",
+        "proxies.txt": "Formaat: ip:port:username:password",
+        "twilio": "Vul hier je Twilio Verify gegevens in (UK nummers vereist)."
+    }
+}
+
+

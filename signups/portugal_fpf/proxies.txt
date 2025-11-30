@@ -1,0 +1,3 @@
+# Proxy format: ip:port:username:password
+# Example:
+# 127.0.0.1:8080:user:pass

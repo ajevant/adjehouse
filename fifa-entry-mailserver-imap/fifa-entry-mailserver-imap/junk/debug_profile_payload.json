@@ -1,0 +1,228 @@
+{
+  "name": "FIFA-Task-125-1758147308707",
+  "tags": [
+    "fifa",
+    "automation"
+  ],
+  "platform": "macos",
+  "platformVersion": "10.15.7",
+  "browserType": "anty",
+  "mainWebsite": "google",
+  "proxy": {
+    "id": 519886889,
+    "teamId": 4501003,
+    "userId": 4595952,
+    "name": "http://pkg-lemonprime-pool-performance-country-NL-session-272783413562:py6qqfuytcfmn78q@gw-eu.lemonclub.io:5555",
+    "type": "http",
+    "host": "gw-eu.lemonclub.io",
+    "port": 5555,
+    "login": "pkg-lemonprime-pool-performance-country-NL-session-272783413562",
+    "password": "py6qqfuytcfmn78q",
+    "changeIpUrl": null,
+    "provider": null,
+    "savedByUser": true,
+    "browser_profiles_count": 0,
+    "lastCheck": {
+      "createdAt": "",
+      "status": true,
+      "ip": "",
+      "country": "",
+      "region": "",
+      "city": "",
+      "timezone": "",
+      "found": 1,
+      "total": 1,
+      "blacklists": [
+        ""
+      ]
+    },
+    "createdAt": "",
+    "updatedAt": ""
+  },
+  "args": [],
+  "notes": [],
+  "login": null,
+  "password": null,
+  "fingerprint": {},
+  "uaFullVersion": null,
+  "folderId": null,
+  "homepages": [],
+  "newHomepages": [
+    {
+      "url": "https://www.google.com",
+      "name": "Google",
+      "mainWebsite": "",
+      "order": 1
+    }
+  ],
+  "fontsMode": "auto",
+  "fonts": [
+    "Lucida Grande",
+    "DIN Condensed",
+    "Avenir Book",
+    "ITF Devanagari",
+    "Charter",
+    "Apple SD Gothic Neo",
+    "Baskerville",
+    "Optima",
+    "Apple Symbols",
+    "Noteworthy",
+    "ITF Devanagari Marathi",
+    "Kannada MN",
+    "Avenir Black",
+    "Hiragino Sans GB W6",
+    "Hiragino Kaku Gothic StdN W8",
+    "Copperplate",
+    "American Typewriter",
+    "Arial Hebrew",
+    "Savoye LET Plain CC.:1.0",
+    "Charter Black",
+    "Mishafi",
+    "Cochin",
+    "Savoye LET",
+    "Bodoni Ornaments",
+    "PT Sans Caption",
+    "Sana",
+    "Al Bayan",
+    "Avenir Next Medium",
+    "Palatino",
+    "PT Sans",
+    "Arial Narrow",
+    "Songti TC",
+    "Hiragino Sans W4",
+    "Hiragino Sans W6",
+    "Zapfino",
+    "Impact",
+    "Hiragino Mincho ProN W3",
+    "Hiragino Kaku Gothic Pro W3",
+    "Plantagenet Cherokee",
+    "Herculanum",
+    "Al Nile",
+    "Hiragino Mincho ProN",
+    "Muna",
+    "Hiragino Kaku Gothic ProN W3",
+    "Nadeem",
+    "Corsiva Hebrew",
+    "Gurmukhi MT",
+    "Arial Rounded MT Bold",
+    "Seravek ExtraLight",
+    "Waseem",
+    "DIN Alternate",
+    "PingFang HK",
+    "AppleGothic",
+    "Gujarati MT",
+    "Farisi",
+    "Avenir Next Heavy",
+    "Hiragino Maru Gothic Pro W4",
+    "Hiragino Kaku Gothic Pro W6",
+    "Oriya Sangam MN",
+    "Hiragino Kaku Gothic StdN",
+    "Tahoma",
+    "Diwan Kufi",
+    "Raanana",
+    "Hiragino Sans W0",
+    "Avenir Light",
+    "Hiragino Sans W8",
+    "Hiragino Mincho Pro",
+    "Gurmukhi MN",
+    "Wingdings",
+    "SignPainter",
+    "Avenir Next Condensed Medium",
+    "Kohinoor Bangla",
+    "Sinhala Sangam MN",
+    "Futura",
+    "PT Sans Narrow",
+    "Verdana",
+    "Gill Sans",
+    "Kohinoor Devanagari",
+    "Hiragino Maru Gothic ProN W4",
+    "Didot",
+    "Arial Unicode MS"
+  ],
+  "macAddress": {
+    "mode": "manual",
+    "value": "26:5F:7A:FF:54:95"
+  },
+  "deviceName": {
+    "mode": "manual",
+    "value": "iMac Retina — John",
+    "valueNew": "iMac Retina — John"
+  },
+  "audio": {
+    "mode": "real"
+  },
+  "isHiddenProfileName": true,
+  "disableLoadWebCameraAndCookies": null,
+  "enableArgIsChromeIcon": null,
+  "doNotTrack": true,
+  "useragent": {
+    "mode": "manual",
+    "value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+  },
+  "webrtc": {
+    "mode": "altered"
+  },
+  "canvas": {
+    "mode": "real"
+  },
+  "webgl": {
+    "mode": "real"
+  },
+  "webgpu": {
+    "mode": "real"
+  },
+  "webglInfo": {
+    "mode": "manual",
+    "vendor": "Google Inc. (Intel)",
+    "renderer": "ANGLE (Intel, ANGLE Metal Renderer: Intel(R) Iris(TM) Plus Graphics 650, Unspecified Version)",
+    "webgl2Maximum": "{\"UNIFORM_BUFFER_OFFSET_ALIGNMENT\":256,\"MAX_TEXTURE_SIZE\":16384,\"MAX_VIEWPORT_DIMS\":[16384,16384],\"MAX_VERTEX_ATTRIBS\":16,\"MAX_VERTEX_UNIFORM_VECTORS\":1024,\"MAX_VARYING_VECTORS\":30,\"MAX_COMBINED_TEXTURE_IMAGE_UNITS\":32,\"MAX_VERTEX_TEXTURE_IMAGE_UNITS\":16,\"MAX_TEXTURE_IMAGE_UNITS\":16,\"MAX_FRAGMENT_UNIFORM_VECTORS\":1024,\"MAX_CUBE_MAP_TEXTURE_SIZE\":16384,\"MAX_RENDERBUFFER_SIZE\":16384,\"MAX_3D_TEXTURE_SIZE\":2048,\"MAX_ELEMENTS_VERTICES\":2147483647,\"MAX_ELEMENTS_INDICES\":2147483647,\"MAX_TEXTURE_LOD_BIAS\":15,\"MAX_DRAW_BUFFERS\":8,\"MAX_FRAGMENT_UNIFORM_COMPONENTS\":4096,\"MAX_VERTEX_UNIFORM_COMPONENTS\":4096,\"MAX_ARRAY_TEXTURE_LAYERS\":2048,\"MIN_PROGRAM_TEXEL_OFFSET\":-8,\"MAX_PROGRAM_TEXEL_OFFSET\":7,\"MAX_VARYING_COMPONENTS\":120,\"MAX_TRANSFORM_FEEDBACK_SEPARATE_COMPONENTS\":4,\"MAX_TRANSFORM_FEEDBACK_INTERLEAVED_COMPONENTS\":128,\"MAX_TRANSFORM_FEEDBACK_SEPARATE_ATTRIBS\":4,\"MAX_COLOR_ATTACHMENTS\":8,\"MAX_SAMPLES\":8,\"MAX_VERTEX_UNIFORM_BLOCKS\":12,\"MAX_FRAGMENT_UNIFORM_BLOCKS\":12,\"MAX_COMBINED_UNIFORM_BLOCKS\":24,\"MAX_UNIFORM_BUFFER_BINDINGS\":24,\"MAX_UNIFORM_BLOCK_SIZE\":16384,\"MAX_COMBINED_VERTEX_UNIFORM_COMPONENTS\":53248,\"MAX_COMBINED_FRAGMENT_UNIFORM_COMPONENTS\":53248,\"MAX_VERTEX_OUTPUT_COMPONENTS\":120,\"MAX_FRAGMENT_INPUT_COMPONENTS\":120,\"MAX_ELEMENT_INDEX\":4294967294}"
+  },
+  "clientRect": {
+    "mode": "real"
+  },
+  "timezone": {
+    "mode": "auto",
+    "value": null
+  },
+  "locale": {
+    "mode": "auto",
+    "value": null
+  },
+  "geolocation": {
+    "mode": "auto"
+  },
+  "cpu": {
+    "mode": "manual",
+    "value": 8
+  },
+  "memory": {
+    "mode": "manual",
+    "value": 8
+  },
+  "screen": {
+    "width": null,
+    "heigh": null
+  },
+  "connectionDownlink": 2.5,
+  "connectionEffectiveType": "4g",
+  "connectionRtt": 250,
+  "connectionSaveData": 0,
+  "platformName": "MacIntel",
+  "cpuArchitecture": "arm",
+  "osVersion": "10.15.7",
+  "screenWidth": 1470,
+  "screenHeight": 956,
+  "vendorSub": "",
+  "productSub": "20030107",
+  "vendor": "Google Inc.",
+  "product": "Gecko",
+  "appCodeName": "Mozilla",
+  "mediaDevices": {
+    "mode": "real"
+  },
+  "userFields": [],
+  "ports": {
+    "mode": "protect",
+    "blacklist": "3389,5900,5800,7070,6568,5938,63333,5901,5902,5903,5950,5931,5939,6039,5944,6040,5279,2112"
+  }
+}
