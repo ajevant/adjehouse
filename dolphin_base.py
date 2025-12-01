@@ -2297,6 +2297,7 @@ class DolphinAutomation:
             profile: Profile dict with 'id' key
             proxy: Proxy dict with 'id' key (optional)
             success: Whether automation was successful (default: True)
+                     If True, always delete. If False, behavior depends on implementation.
             proxy_string: Proxy string to remove from file (optional, for file-based proxies)
             proxies_file: Path to proxies file to remove proxy string from (optional)
         """
@@ -2316,7 +2317,8 @@ class DolphinAutomation:
         except Exception as e:
             print(f"⚠️  Error stopping profile {profile_id}: {e}")
         
-        # Only delete on success
+        # Delete profile and proxy (ALTIJD verwijderen om opbouw te voorkomen)
+        # Als success=True, betekent dit dat we moeten verwijderen (ook bij failure om profiel opbouw te voorkomen)
         if success:
             # Delete profile from Dolphin
             try:
@@ -2343,8 +2345,27 @@ class DolphinAutomation:
             if proxy_string and proxies_file:
                 self._remove_proxy_string_from_file(proxy_string, proxies_file)
         else:
-            # On failure, just stop but don't delete (allow retry)
-            print(f"⚠️  Profile {profile_id} stopped but not deleted (failure - will retry later)")
+            # On failure, also delete to prevent profile buildup (changed behavior)
+            # This prevents profiles from accumulating to 100 when register button not found, etc.
+            try:
+                print(f"🗑️  Deleting profile {profile_id} from Dolphin (failure cleanup)...")
+                self.delete_profile(profile_id)
+                print(f"✅ Profile {profile_id} deleted from Dolphin (failure cleanup)")
+            except Exception as e:
+                print(f"⚠️  Error deleting profile {profile_id} from Dolphin: {e}")
+            
+            # Delete proxy from Dolphin if provided
+            if proxy and proxy.get('id'):
+                proxy_id = proxy.get('id')
+                try:
+                    print(f"🗑️  Deleting proxy {proxy_id} from Dolphin (failure cleanup)...")
+                    result = self.delete_proxy(proxy_id)
+                    if result:
+                        print(f"✅ Proxy {proxy_id} deleted from Dolphin (failure cleanup)")
+                    else:
+                        print(f"⚠️  Proxy {proxy_id} deletion returned False")
+                except Exception as e:
+                    print(f"⚠️  Error deleting proxy {proxy_id} from Dolphin: {e}")
     
     def _remove_proxy_string_from_file(self, proxy_string, proxies_file):
         """

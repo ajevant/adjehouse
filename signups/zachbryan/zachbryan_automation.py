@@ -691,17 +691,17 @@ class ZachBryanAutomation(DolphinAutomation):
                 except:
                     pass
             
-            # Always cleanup profile and proxy (na volledige signup)
+            # Always cleanup profile and proxy (ALTIJD verwijderen, ook bij failure om opbouw te voorkomen)
             if profile:
                 profile_id = profile['id'] if profile else None
                 proxy_data = self.profile_proxy_map.get(profile_id) if profile_id else None
                 proxy_string = self.profile_proxy_string_map.get(profile_id) if profile_id else None
                 
-                # Cleanup profile en proxy (altijd verwijderen na signup, ook bij failure)
+                # Cleanup profile en proxy (ALTIJD verwijderen, ook bij failure om te voorkomen dat profielen oplopen tot 100)
                 self._cleanup_profile_and_proxy(
                     profile=profile,
                     proxy=proxy_data,
-                    success=success,  # Alleen bij success verwijderen, anders alleen stoppen
+                    success=True,  # ALTIJD verwijderen (ook bij failure) om profiel opbouw te voorkomen
                     proxy_string=proxy_string,
                     proxies_file=str(self.proxies_file) if hasattr(self, 'proxies_file') and self.proxies_file else None
                 )
