@@ -27,7 +27,7 @@ except ImportError:
     DISCORD_AVAILABLE = False
 
 # Version info - extract from executable name only (version.txt is no longer used)
-VERSION = "BUILD-209"  # Default fallback
+VERSION = "BUILD-210"  # Default fallback
 try:
     if getattr(sys, 'frozen', False):
         # Running as compiled executable - extract version from filename
