@@ -27,7 +27,7 @@ except ImportError:
     DISCORD_AVAILABLE = False
 
 # Version info - extract from executable name only (version.txt is no longer used)
-VERSION = "BUILD-200"  # Default fallback
+VERSION = "BUILD-205"  # Default fallback
 try:
     if getattr(sys, 'frozen', False):
         # Running as compiled executable - extract version from filename
@@ -385,7 +385,8 @@ SIGNUP_MODULES = {
     "1": {"name": "Laylo RSVP", "path": "signups/laylo/laylo_automation.py"},
     "2": {"name": "Seated Signup", "path": "signups/seated/seated_automation.py"},
     "3": {"name": "Portugal FPF Registration", "path": "signups/portugal_fpf/portugal_fpf_automation.py"},
-    "4": {"name": "Example (Dolphin Base)", "path": "example_signup.py"},
+    "4": {"name": "Zach Bryan Presale", "path": "signups/zachbryan/zachbryan_automation.py"},
+    "5": {"name": "Example (Dolphin Base)", "path": "example_signup.py"},
 }
 
 # Discord Pushover bot tracking
@@ -420,6 +421,21 @@ def run_module(module_path, module_name):
         
         # Import and run the module's main function directly
         import importlib.util
+        
+        # Ensure sys.path includes the root directory for dolphin_base imports
+        if getattr(sys, 'frozen', False):
+            # Running as EXE - add _MEIPASS and exe directory to path
+            if hasattr(sys, '_MEIPASS'):
+                if str(Path(sys._MEIPASS)) not in sys.path:
+                    sys.path.insert(0, str(Path(sys._MEIPASS)))
+            exe_dir = Path(sys.executable).parent
+            if str(exe_dir) not in sys.path:
+                sys.path.insert(0, str(exe_dir))
+        else:
+            # Running as script - add project root to path
+            project_root = Path(__file__).parent
+            if str(project_root) not in sys.path:
+                sys.path.insert(0, str(project_root))
         
         # Load the module
         spec = importlib.util.spec_from_file_location("scraper_module", full_path)
@@ -665,6 +681,7 @@ def ensure_settings_exist():
     LAYLO_DIR = SIGNUPS_DIR / 'laylo'
     SEATED_DIR = SIGNUPS_DIR / 'seated'
     PORTUGAL_FPF_DIR = SIGNUPS_DIR / 'portugal_fpf'
+    ZACHBRYAN_DIR = SIGNUPS_DIR / 'zachbryan'
     MONITORS_DIR = BASE_DIR / 'monitors'
     LYSTED_DIR = MONITORS_DIR / 'lysted'
     VIAGOGO_DIR = MONITORS_DIR / 'viagogo'
@@ -677,6 +694,7 @@ def ensure_settings_exist():
     LAYLO_DIR.mkdir(parents=True, exist_ok=True)
     SEATED_DIR.mkdir(parents=True, exist_ok=True)
     PORTUGAL_FPF_DIR.mkdir(parents=True, exist_ok=True)
+    ZACHBRYAN_DIR.mkdir(parents=True, exist_ok=True)
     MONITORS_DIR.mkdir(parents=True, exist_ok=True)
     LYSTED_DIR.mkdir(parents=True, exist_ok=True)
     VIAGOGO_DIR.mkdir(parents=True, exist_ok=True)

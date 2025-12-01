@@ -174,6 +174,15 @@ def extract_sale_data(msg, account_email, subject):
                             if row_match:
                                 sale_data['row'] = row_match.group(1).strip()
                             
+                            # Extract seats (e.g., "Seat(s) 144 - 145" or "Seat(s) 144, 145")
+                            seats_match = re.search(r'Seat\(s\)\s+([0-9\-\s,]+)', text, re.IGNORECASE)
+                            if seats_match:
+                                seats_value = seats_match.group(1).strip()
+                                # Clean up seat formatting (remove extra spaces)
+                                seats_value = re.sub(r'\s+', ' ', seats_value)
+                                if seats_value:
+                                    sale_data['seats'] = seats_value
+                            
                             # Extract quantity from "(1 Ticket(s))"
                             qty_match = re.search(r'\((\d+)\s+Ticket', text, re.IGNORECASE)
                             if qty_match:
@@ -397,6 +406,15 @@ def extract_sale_data(msg, account_email, subject):
                                 # Only set if it's not empty
                                 if row_value:
                                     sale_data['row'] = row_value
+                            
+                            # Extract seats (e.g., "Seat(s) 144 - 145" or "Seat(s) 144, 145")
+                            seats_match = re.search(r'Seat\(s\)\s+([0-9\-\s,]+)', text, re.IGNORECASE)
+                            if seats_match:
+                                seats_value = seats_match.group(1).strip()
+                                # Clean up seat formatting (remove extra spaces)
+                                seats_value = re.sub(r'\s+', ' ', seats_value)
+                                if seats_value:
+                                    sale_data['seats'] = seats_value
                             
                             qty_match = re.search(r'\((\d+)\s+Ticket', text, re.IGNORECASE)
                             if qty_match:
@@ -734,6 +752,8 @@ def send_discord_webhook(webhook_url, sale_data):
                 location_parts.append(f"Section {sale_data['section']}")
             if sale_data.get('row'):
                 location_parts.append(f"Row {sale_data['row']}")
+            if sale_data.get('seats'):
+                location_parts.append(f"Seats {sale_data['seats']}")
             if location_parts:
                 description_parts.append(f"**Location:** {' | '.join(location_parts)}")
             

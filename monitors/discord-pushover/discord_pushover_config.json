@@ -1,6 +1,8 @@
 {
     "monitor_name": "Discord Pushover Bot",
     "discord": {
+
+
         "bot_token": "YOUR_DISCORD_BOT_TOKEN_HERE",
         "target_user_id": 892535491738603580,
         "allowed_channel_ids": [1401706893617004545]

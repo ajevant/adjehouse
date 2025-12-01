@@ -213,17 +213,17 @@ class DolphinAutomation:
                 
                 for url in endpoints_to_try:
                     try:
-                params = {
-                    'platform': platform,
-                    'browser_type': browser_type,
-                    'browser_version': browser_version,
+                        params = {
+                            'platform': platform,
+                            'browser_type': browser_type,
+                            'browser_version': browser_version,
                             'screen': selected_screen  # Variëer screen resolutie
-                }
-                
-                response = requests.get(url, headers=self._get_headers(use_local_api=False), params=params, timeout=30)
+                        }
+                        
+                        response = requests.get(url, headers=self._get_headers(use_local_api=False), params=params, timeout=30)
                         
                         if response.status_code == 200:
-                data = self._handle_api_response(response, 'get_fingerprint')
+                            data = self._handle_api_response(response, 'get_fingerprint')
                             break  # Success, exit loop
                         else:
                             last_error = f"HTTP {response.status_code}: {response.text[:200]}"
@@ -256,37 +256,69 @@ class DolphinAutomation:
         raise Exception(f"Failed to get valid fingerprint after {max_retries} attempts")
     
     def _validate_fingerprint(self, fingerprint):
-        """Validate fingerprint consistency (platform-aware validation)
-        Soepelere validatie - alleen basis checks om te voorkomen dat we te veel fingerprints afwijzen
+        """Validate fingerprint consistency (zoals vriend's implementatie)
+        Valideert dat CPU architecture matcht met WebGL vendor en andere consistentie checks
         """
         try:
-            # Basis checks - alleen de meest kritieke validaties
-            
-            # Check hardware concurrency (moet redelijk zijn)
+            # Check 1: Hardware concurrency moet redelijk zijn
             hw_concurrency = fingerprint.get('hardwareConcurrency', 0)
-            if hw_concurrency < 1 or hw_concurrency > 256:  # Soepeler range
+            if hw_concurrency < 2 or hw_concurrency > 128:
                 return False
             
-            # Check platform version exists (minimaal check)
+            # Check 2: Platform version moet bestaan en redelijk zijn
             platform_version = fingerprint.get('platformVersion', '')
-            if not platform_version or len(platform_version) < 1:  # Zeer soepel
+            if not platform_version or len(platform_version) < 5:
                 return False
             
-            # Check dat fingerprint basis velden heeft
+            # Check 3: Basis velden moeten bestaan
             if not fingerprint.get('userAgent'):
                 return False
             
-            # Optionele platform-specifieke checks (alleen waarschuwing, geen harde fail)
+            # Check 4: CPU Architecture moet matchen met WebGL vendor (zoals vriend's validatie)
             platform = self.default_config.get('platform', 'windows')
             cpu_arch = fingerprint.get('cpu', {}).get('architecture', '').lower()
             webgl_vendor = fingerprint.get('webgl', {}).get('unmaskedVendor', '').lower()
+            webgl_renderer = fingerprint.get('webgl', {}).get('unmaskedRenderer', '').lower()
             
-            # Alleen zeer duidelijke mismatches afwijzen
-            if platform == 'macos' and cpu_arch == 'arm':
-                # ARM Macs zouden Apple graphics moeten hebben, maar we zijn soepel
-                if webgl_vendor and 'apple' not in webgl_vendor and 'intel' not in webgl_vendor:
-                    # Alleen failen als het duidelijk niet Mac-compatibel is
-                    pass  # We zijn soepel
+            if cpu_arch == 'arm':
+                # ARM Macs moeten Apple graphics hebben
+                if not webgl_vendor or ('apple' not in webgl_vendor):
+                    return False
+            elif cpu_arch == 'x86':
+                # x86 Macs moeten Intel graphics hebben
+                if platform == 'macos' and webgl_vendor and 'intel' not in webgl_vendor:
+                    return False
+            
+            # Check 5: WebGPU architecture moet matchen met CPU (als beschikbaar)
+            try:
+                webgpu = fingerprint.get('webgpu', '')
+                if webgpu:
+                    # WebGPU kan een JSON string zijn (double-escaped)
+                    if isinstance(webgpu, str):
+                        try:
+                            webgpu_data = json.loads(webgpu)
+                            if isinstance(webgpu_data, str):
+                                webgpu_data = json.loads(webgpu_data)
+                            
+                            webgpu_vendor = webgpu_data.get('info', {}).get('vendor', '').lower() if isinstance(webgpu_data, dict) else ''
+                            webgpu_arch = webgpu_data.get('info', {}).get('architecture', '').lower() if isinstance(webgpu_data, dict) else ''
+                            
+                            if cpu_arch == 'arm':
+                                # ARM moet Apple vendor hebben met common architecture
+                                if webgpu_vendor and webgpu_vendor != 'apple':
+                                    return False
+                                if webgpu_arch and 'common' not in webgpu_arch:
+                                    return False
+                            elif cpu_arch == 'x86':
+                                # x86 moet Intel vendor hebben met gen architecture
+                                if platform == 'macos' and webgpu_vendor and webgpu_vendor != 'intel':
+                                    return False
+                                if webgpu_arch and 'gen' not in webgpu_arch:
+                                    return False
+                        except:
+                            pass  # WebGPU parsing failed, skip this check
+            except:
+                pass  # WebGPU check failed, continue
             
             # Als we hier komen, is de fingerprint acceptabel
             return True
@@ -308,15 +340,15 @@ class DolphinAutomation:
             
             for url in endpoints_to_try:
                 try:
-            params = {
+                    params = {
                         'platform': platform
-            }
-            
-            response = requests.get(url, headers=self._get_headers(use_local_api=False), params=params, timeout=30)
+                    }
+                    
+                    response = requests.get(url, headers=self._get_headers(use_local_api=False), params=params, timeout=30)
                     
                     if response.status_code == 200:
-            data = self._handle_api_response(response, 'get_font_list')
-            return data
+                        data = self._handle_api_response(response, 'get_font_list')
+                        return data
                 except Exception:
                     continue  # Try next endpoint
             
@@ -422,49 +454,11 @@ class DolphinAutomation:
                 browser_version=selected_browser_version
             )
             
-            # Get WebGL vendor/renderer combinations (voor realistische GPU spoofing)
-            webgl_list = None
-            try:
-                webgl_list = self.get_webgl_list(
-                    platform=self.default_config['platform'],
-                    browser_version=selected_browser_version,
-                    with_maximum=True
-                )
-            except Exception as e:
-                print(f"⚠️  Error getting WebGL list, using fingerprint default: {e}")
-                webgl_list = None
-            
-            # Select random vendor/renderer combo
-            if webgl_list and isinstance(webgl_list, dict):
-                    vendors = list(webgl_list.keys())
-                    if vendors:
-                        selected_vendor = random.choice(vendors)
-                        renderers = webgl_list[selected_vendor]
-                        if isinstance(renderers, dict):
-                            # Format: {vendor: {renderer: {webgl2Maximum: ...}}}
-                            renderer_names = list(renderers.keys())
-                            if renderer_names:
-                                selected_renderer = random.choice(renderer_names)
-                                webgl2_maximum = renderers[selected_renderer].get('webgl2Maximum', {})
-                            else:
-                                selected_renderer = fingerprint.get('webgl', {}).get('unmaskedRenderer', '')
-                                webgl2_maximum = fingerprint.get('webgl2Maximum', {})
-                        elif isinstance(renderers, list) and renderers:
-                            # Format: {vendor: [renderer strings]}
-                            selected_renderer = random.choice(renderers)
-                            webgl2_maximum = fingerprint.get('webgl2Maximum', {})
-                        else:
-                            selected_renderer = fingerprint.get('webgl', {}).get('unmaskedRenderer', '')
-                            webgl2_maximum = fingerprint.get('webgl2Maximum', {})
-                    else:
-                        selected_vendor = fingerprint.get('webgl', {}).get('unmaskedVendor', '')
-                        selected_renderer = fingerprint.get('webgl', {}).get('unmaskedRenderer', '')
-                        webgl2_maximum = fingerprint.get('webgl2Maximum', {})
-            else:
-                # Fallback naar fingerprint WebGL data (als webgl_list None is of geen dict)
-                selected_vendor = fingerprint.get('webgl', {}).get('unmaskedVendor', '')
-                selected_renderer = fingerprint.get('webgl', {}).get('unmaskedRenderer', '')
-                webgl2_maximum = fingerprint.get('webgl2Maximum', {})
+            # Gebruik WebGL vendor/renderer direct uit fingerprint (zoals vriend's implementatie)
+            # Dit zorgt voor consistentie tussen alle fingerprint velden
+            selected_vendor = fingerprint.get('webgl', {}).get('unmaskedVendor', '')
+            selected_renderer = fingerprint.get('webgl', {}).get('unmaskedRenderer', '')
+            webgl2_maximum = fingerprint.get('webgl2Maximum', {})
             
             # Get random user-agent (consistent met fingerprint maar variatie)
             try:
@@ -485,22 +479,24 @@ class DolphinAutomation:
                 browser_version=selected_browser_version
             )
             
-            # Select random fonts (variëer aantal voor uniekheid)
-            # Gebruik 60-100 fonts (realistisch voor moderne systemen)
-            num_fonts = random.randint(60, 100)
-            if isinstance(font_list, list) and len(font_list) > 0:
-                selected_fonts = random.sample(font_list, min(len(font_list), num_fonts))
-                selected_font_ids = [f['id'] for f in selected_fonts if isinstance(f, dict) and 'id' in f]
-            else:
-                # Fallback: gebruik fingerprint fonts als string
-                try:
-            fingerprint_fonts = json.loads(fingerprint.get('fonts', '[]'))
+            # Gebruik fonts uit fingerprint (zoals vriend's implementatie)
+            # fingerprint.fonts is een JSON string zoals: "[\"Adobe Devanagari\", \"Agency FB\"]"
+            selected_font_ids = []
+            try:
+                fingerprint_fonts = json.loads(fingerprint.get('fonts', '[]'))
+                if isinstance(font_list, list) and len(font_list) > 0:
+                    # Map fingerprint font names naar font IDs uit font_list
+                    font_name_to_id = {f.get('font', ''): f.get('id') for f in font_list if isinstance(f, dict) and 'id' in f and 'font' in f}
+                    for font_name in fingerprint_fonts:
+                        if font_name in font_name_to_id:
+                            selected_font_ids.append(font_name_to_id[font_name])
+                else:
+                    # Fallback: gebruik alle fonts als we geen font_list hebben
                     if isinstance(fingerprint_fonts, list):
-                        selected_font_ids = fingerprint_fonts[:num_fonts] if len(fingerprint_fonts) > num_fonts else fingerprint_fonts
-                    else:
-                        selected_font_ids = []
-                except:
-                    selected_font_ids = []
+                        selected_font_ids = fingerprint_fonts
+            except Exception as e:
+                print(f"⚠️  Error parsing fingerprint fonts: {e}")
+                selected_font_ids = []
             
             # Get proxy
             if not proxy_data:
@@ -527,8 +523,8 @@ class DolphinAutomation:
                 'name': profile_name,
                 'tags': ['automation', f'batch-{int(time.time())}'],
                 'platform': self.default_config['platform'],
-                # Platform version - gebruik OS version uit fingerprint (consistent)
-                'platformVersion': fingerprint.get('os', {}).get('version', '10.0' if self.default_config['platform'] == 'windows' else '15.6.1'),
+                # Platform version - gebruik platformVersion uit fingerprint (zoals vriend's implementatie)
+                'platformVersion': fingerprint.get('platformVersion', '10.0' if self.default_config['platform'] == 'windows' else '15.6.1'),
                 'browserType': self.default_config['browser_type'],
                 'proxy': {
                     'id': proxy_data['id'],
@@ -571,8 +567,8 @@ class DolphinAutomation:
                     'value': None,
                     'valueNew': None
                 },
-                # doNotTrack moet False zijn (zoals in TypeScript config)
-                'doNotTrack': False,
+                # doNotTrack moet True zijn (zoals vriend's implementatie)
+                'doNotTrack': True,
                 'statusId': 0,
                 'isHiddenProfileName': True,
                 'disableLoadWebCameraAndCookies': None,
@@ -588,17 +584,17 @@ class DolphinAutomation:
                     'ipAddress': None
                 },
             'canvas': {
-                    'mode': 'noise'  # Gebruik 'noise' mode (zoals TypeScript code voor Cloudflare bypass)
+                    'mode': 'real'  # Gebruik 'real' mode (zoals vriend's implementatie - beter voor anti-detectie)
             },
             'webgl': {
-                    'mode': 'noise'  # Gebruik 'noise' mode (zoals TypeScript code voor Cloudflare bypass)
+                    'mode': 'real'  # Gebruik 'real' mode (zoals vriend's implementatie - beter voor anti-detectie)
             },
-                # WebGL info - gebruik fingerprint waarden (consistent met volledige fingerprint)
+                # WebGL info - gebruik fingerprint waarden direct (zoals vriend's implementatie)
                 'webglInfo': {
                     'mode': 'manual',
-                    'vendor': fingerprint.get('webgl', {}).get('unmaskedVendor', selected_vendor),
-                    'renderer': fingerprint.get('webgl', {}).get('unmaskedRenderer', selected_renderer),
-                    'webgl2Maximum': fingerprint.get('webgl2Maximum', webgl2_maximum) if fingerprint.get('webgl2Maximum') else webgl2_maximum
+                    'vendor': selected_vendor,
+                    'renderer': selected_renderer,
+                    'webgl2Maximum': webgl2_maximum
                 },
                 'webgpu': {
                     'mode': 'manual',  # Gebruik 'manual' mode met fingerprint waarde (zoals TypeScript code)
@@ -635,12 +631,10 @@ class DolphinAutomation:
                 'connectionRtt': fingerprint.get('connection', {}).get('rtt', random.randint(40, 80)),
                 'connectionSaveData': 1 if fingerprint.get('connection', {}).get('saveData', False) else 0,  # 0 of 1 (niet boolean)
                 # Screen resolutie (variëer voor uniekheid - consistent met fingerprint)
+                # Screen resolutie - gebruik fingerprint waarden (zoals vriend's implementatie)
+                # Vriend heeft screen mode uitgecommentarieerd, dus we laten het weg (Dolphin gebruikt dan default)
                 'screenWidth': fingerprint.get('screen', {}).get('width', 1920),
                 'screenHeight': fingerprint.get('screen', {}).get('height', 1080),
-                'screen': {
-                    'mode': 'real',  # Gebruik real screen resolutie
-                    'resolution': f"{fingerprint.get('screen', {}).get('width', 1920)}x{fingerprint.get('screen', {}).get('height', 1080)}"
-                },
                 # Alle fingerprint-afgeleide velden (consistent met volledige fingerprint)
                 'platformName': fingerprint.get('platform', 'Win32' if self.default_config['platform'] == 'windows' else 'MacIntel'),
                 'cpuArchitecture': fingerprint.get('cpu', {}).get('architecture', 'x64' if self.default_config['platform'] == 'windows' else 'arm'),
@@ -1265,14 +1259,14 @@ class DolphinAutomation:
             retry_delay = 2.0
             
             for connection_attempt in range(1, max_connection_retries + 1):
-            try:
-                # Method 1: Let Selenium Manager automatically download/manage ChromeDriver
-                # Selenium 4.6+ has built-in Selenium Manager that handles driver downloads
-                # It will automatically download to the correct user's cache folder
-                driver = webdriver.Chrome(options=options)
+                try:
+                    # Method 1: Let Selenium Manager automatically download/manage ChromeDriver
+                    # Selenium 4.6+ has built-in Selenium Manager that handles driver downloads
+                    # It will automatically download to the correct user's cache folder
+                    driver = webdriver.Chrome(options=options)
                     break  # Success, exit retry loop
-            except Exception as e:
-                error_str = str(e).lower()
+                except Exception as e:
+                    error_str = str(e).lower()
                     error_msg = str(e)
                     
                     # Check if it's a connection issue (cannot connect to chrome)
@@ -1290,41 +1284,41 @@ class DolphinAutomation:
                         retry_delay += 1.0
                         continue
                     
-                # Check if it's a driver path/version issue
-                if "driver" in error_str or "chromedriver" in error_str or "path" in error_str or "version" in error_str:
+                    # Check if it's a driver path/version issue
+                    if "driver" in error_str or "chromedriver" in error_str or "path" in error_str or "version" in error_str:
                         print(f"⚠️  ChromeDriver issue detected: {error_msg[:100]}...")
-                    print(f"    Attempting with additional options (debuggerAddress should bypass version check)...")
-                    # Method 2: Try with additional options to bypass version check
-                    try:
-                        options.add_argument("--disable-dev-shm-usage")
-                        options.add_argument("--no-sandbox")
-                        options.add_argument("--disable-gpu")
-                            # Note: excludeSwitches removed - not supported by all Chrome versions
-                        # When using debuggerAddress, we can use any ChromeDriver version
-                        # Selenium Manager should handle this automatically
-                        driver = webdriver.Chrome(options=options)
-                            break  # Success
-                    except Exception as e2:
-                        # Method 3: Try with Service() - let Selenium Manager auto-detect
+                        print(f"    Attempting with additional options (debuggerAddress should bypass version check)...")
+                        # Method 2: Try with additional options to bypass version check
                         try:
-                            # Selenium Manager (built into Selenium 4.6+) will auto-download
-                            # Don't specify executable_path - let Selenium find/download it automatically
-                            service = Service()
-                            driver = webdriver.Chrome(service=service, options=options)
-                                break  # Success
-                        except Exception as e3:
-                            # Method 4: Try using ChromeDriverManager if available (fallback)
-                                # Note: webdriver-manager is an optional dependency
+                            options.add_argument("--disable-dev-shm-usage")
+                            options.add_argument("--no-sandbox")
+                            options.add_argument("--disable-gpu")
+                            # Note: excludeSwitches removed - not supported by all Chrome versions
+                            # When using debuggerAddress, we can use any ChromeDriver version
+                            # Selenium Manager should handle this automatically
+                            driver = webdriver.Chrome(options=options)
+                            break  # Success
+                        except Exception as e2:
+                            # Method 3: Try with Service() - let Selenium Manager auto-detect
                             try:
-                                from selenium.webdriver.chrome.service import Service as ChromeService
-                                    from webdriver_manager.chrome import ChromeDriverManager  # type: ignore
-                                service = ChromeService(ChromeDriverManager().install())
+                                # Selenium Manager (built into Selenium 4.6+) will auto-download
+                                # Don't specify executable_path - let Selenium find/download it automatically
+                                service = Service()
                                 driver = webdriver.Chrome(service=service, options=options)
+                                break  # Success
+                            except Exception as e3:
+                                # Method 4: Try using ChromeDriverManager if available (fallback)
+                                # Note: webdriver-manager is an optional dependency
+                                try:
+                                    from selenium.webdriver.chrome.service import Service as ChromeService
+                                    from webdriver_manager.chrome import ChromeDriverManager  # type: ignore
+                                    service = ChromeService(ChromeDriverManager().install())
+                                    driver = webdriver.Chrome(service=service, options=options)
                                     break  # Success
-                            except ImportError:
-                                # webdriver-manager not installed, skip this method
-                                pass
-                            except Exception as e4:
+                                except ImportError:
+                                    # webdriver-manager not installed, skip this method
+                                    pass
+                                except Exception as e4:
                                     # Final attempt failed
                                     if connection_attempt >= max_connection_retries:
                                         # Provide detailed troubleshooting info
@@ -1345,7 +1339,7 @@ class DolphinAutomation:
                                         )
                                         raise Exception(troubleshooting)
                                     continue
-                else:
+                    else:
                         # Not a driver-related error, re-raise if last attempt
                         if connection_attempt >= max_connection_retries:
                             raise Exception(
@@ -1355,7 +1349,7 @@ class DolphinAutomation:
                             )
                         continue
             
-                if not driver:
+            if not driver:
                 raise Exception(
                     f"Failed to create Chrome driver after {max_connection_retries} attempts.\n"
                     f"Debugger address: {debugger_address}\n"
@@ -1773,9 +1767,9 @@ class DolphinAutomation:
                     self.human_mouse_move(driver, current_pos, target_pos)
                 else:
                     # Coordinates too far apart, use simpler approach
-            actions = ActionChains(driver)
+                    actions = ActionChains(driver)
                     actions.move_to_element(element)
-            actions.perform()
+                    actions.perform()
             except Exception as e:
                 # If mouse movement fails, just move to element directly
                 try:
@@ -1798,11 +1792,11 @@ class DolphinAutomation:
             
             # Try to click using ActionChains (move_to_element is safer than move_by_offset)
             try:
-            actions = ActionChains(driver)
-            actions.move_to_element(element)
-            actions.pause(random.uniform(0.05, 0.15))
-            actions.click()
-            actions.perform()
+                actions = ActionChains(driver)
+                actions.move_to_element(element)
+                actions.pause(random.uniform(0.05, 0.15))
+                actions.click()
+                actions.perform()
             except Exception as e:
                 # If ActionChains fails, try JavaScript click
                 try:
@@ -1828,10 +1822,10 @@ class DolphinAutomation:
                 driver.execute_script("arguments[0].click();", element)
             except:
                 # Last fallback: simple click
-            try:
-                element.click()
-            except:
-                pass
+                try:
+                    element.click()
+                except:
+                    pass
     
     def human_type(self, element, text, driver=None):
         """
@@ -1925,8 +1919,8 @@ class DolphinAutomation:
                 natural_events.dispatch_field_events_realistically(element)
             else:
                 # Fallback: Trigger events manually
-            element.send_keys('\t')  # Tab to trigger blur
-            time.sleep(random.uniform(0.2, 0.42))
+                element.send_keys('\t')  # Tab to trigger blur
+                time.sleep(random.uniform(0.2, 0.42))
             
         except Exception as e:
             print(f"⚠️ Error in human type: {e}")
