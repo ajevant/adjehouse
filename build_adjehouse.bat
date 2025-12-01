@@ -121,8 +121,8 @@ if not errorlevel 1 (
     echo Found Git in PATH
 ) else (
     REM Second try: use where.exe to find git
-    for /f "delims=" %%i in ('where.exe git 2^>nul') do (
-        set GIT_CMD=%%i
+    for /f "tokens=* delims= " %%i in ('where.exe git 2^>nul') do (
+        set "GIT_CMD=%%i"
         echo Found Git at: %%i
         goto :git_found
     )
@@ -156,11 +156,12 @@ if not errorlevel 1 (
         )
         
         REM Fifth try: use PowerShell to find Git
-        for /f "delims=" %%i in ('powershell -Command "Get-Command git -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source" 2^>nul') do (
-            if exist "%%i" (
-                set "GIT_CMD=%%i"
-                for %%p in ("%%i") do set "GIT_DIR=%%~dp"
-                echo Found Git via PowerShell at: %%i
+        for /f "tokens=* delims= " %%i in ('powershell -NoProfile -Command "try { (Get-Command git -ErrorAction Stop).Source.Trim() } catch { }" 2^>nul') do (
+            set "GIT_PATH=%%i"
+            if "!GIT_PATH!" neq "" if exist "!GIT_PATH!" (
+                set "GIT_CMD=!GIT_PATH!"
+                for %%p in ("!GIT_PATH!") do set "GIT_DIR=%%~dp"
+                echo Found Git via PowerShell at: !GIT_PATH!
                 goto :git_found
             )
         )
