@@ -1387,36 +1387,43 @@ class DolphinAutomation:
                     # Check if it's a driver path/version issue
                     if "driver" in error_str or "chromedriver" in error_str or "path" in error_str or "version" in error_str:
                         print(f"⚠️  ChromeDriver issue detected: {error_msg[:100]}...")
-                        print(f"    Attempting with additional options (debuggerAddress should bypass version check)...")
-                        # Method 2: Try with additional options to bypass version check
+                        print(f"    Attempting to download correct ChromeDriver version automatically...")
+                        # Method 2: Try using ChromeDriverManager first (automatically downloads correct version)
+                        # Note: webdriver-manager is an optional dependency
                         try:
-                            options.add_argument("--disable-dev-shm-usage")
-                            options.add_argument("--no-sandbox")
-                            options.add_argument("--disable-gpu")
-                            # Note: excludeSwitches removed - not supported by all Chrome versions
-                            # When using debuggerAddress, we can use any ChromeDriver version
-                            # Selenium Manager should handle this automatically
-                            driver = webdriver.Chrome(options=options)
+                            from selenium.webdriver.chrome.service import Service as ChromeService
+                            from webdriver_manager.chrome import ChromeDriverManager  # type: ignore
+                            print(f"    📥 Downloading correct ChromeDriver version via webdriver-manager...")
+                            service = ChromeService(ChromeDriverManager().install())
+                            driver = webdriver.Chrome(service=service, options=options)
+                            print(f"    ✅ ChromeDriver successfully downloaded and connected!")
                             break  # Success
+                        except ImportError:
+                            # webdriver-manager not installed, try other methods
+                            print(f"    ⚠️  webdriver-manager not available, trying alternative methods...")
+                            pass
                         except Exception as e2:
-                            # Method 3: Try with Service() - let Selenium Manager auto-detect
+                            print(f"    ⚠️  webdriver-manager failed: {str(e2)[:100]}...")
+                            # Method 3: Try with additional options to bypass version check
                             try:
-                                # Selenium Manager (built into Selenium 4.6+) will auto-download
-                                # Don't specify executable_path - let Selenium find/download it automatically
-                                service = Service()
-                                driver = webdriver.Chrome(service=service, options=options)
+                                options.add_argument("--disable-dev-shm-usage")
+                                options.add_argument("--no-sandbox")
+                                options.add_argument("--disable-gpu")
+                                # Note: excludeSwitches removed - not supported by all Chrome versions
+                                # When using debuggerAddress, we can use any ChromeDriver version
+                                # Selenium Manager should handle this automatically
+                                driver = webdriver.Chrome(options=options)
                                 break  # Success
                             except Exception as e3:
-                                # Method 4: Try using ChromeDriverManager if available (fallback)
-                                # Note: webdriver-manager is an optional dependency
+                                # Method 4: Try with Service() - let Selenium Manager auto-detect
                                 try:
-                                    from selenium.webdriver.chrome.service import Service as ChromeService
-                                    from webdriver_manager.chrome import ChromeDriverManager  # type: ignore
-                                    service = ChromeService(ChromeDriverManager().install())
+                                    # Selenium Manager (built into Selenium 4.6+) will auto-download
+                                    # Don't specify executable_path - let Selenium find/download it automatically
+                                    service = Service()
                                     driver = webdriver.Chrome(service=service, options=options)
                                     break  # Success
-                                except ImportError:
-                                    # webdriver-manager not installed, skip this method
+                                except Exception as e4:
+                                    # Final fallback failed
                                     pass
                                 except Exception as e4:
                                     # Final attempt failed
