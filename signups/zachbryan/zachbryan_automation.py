@@ -535,8 +535,8 @@ class ZachBryanAutomation(DolphinAutomation):
             print(f"❌ Error loading {file_type} from {file_path}: {e}")
             return lines
     
-    def _mark_account_registered(self, email):
-        """Mark an account as registered in CSV"""
+    def _update_account_in_csv(self, email, first_name=None, last_name=None, phone_number=None, registered=None):
+        """Update account data in CSV (bijwerken tijdens invullen)"""
         try:
             if not self.accounts_csv.exists():
                 return
@@ -548,8 +548,17 @@ class ZachBryanAutomation(DolphinAutomation):
                 fieldnames = reader.fieldnames or ['email', 'first_name', 'last_name', 'phone_number', 'registered', 'timestamp']
                 for row in reader:
                     if row.get('email', '').strip().lower() == email.lower():
-                        row['registered'] = 'true'
-                        row['timestamp'] = time.strftime("%Y-%m-%d %H:%M:%S")
+                        # Update gegevens als ze zijn opgegeven
+                        if first_name is not None:
+                            row['first_name'] = first_name
+                        if last_name is not None:
+                            row['last_name'] = last_name
+                        if phone_number is not None:
+                            row['phone_number'] = phone_number
+                        if registered is not None:
+                            row['registered'] = 'true' if registered else 'false'
+                            if registered:
+                                row['timestamp'] = time.strftime("%Y-%m-%d %H:%M:%S")
                     rows.append(row)
             
             with open(self.accounts_csv, 'w', encoding='utf-8', newline='') as f:
@@ -557,10 +566,17 @@ class ZachBryanAutomation(DolphinAutomation):
                 writer.writeheader()
                 writer.writerows(rows)
             
-            print(f"✅ Marked {email} as registered")
+            if registered:
+                print(f"✅ Marked {email} as registered")
+            else:
+                print(f"✅ Updated {email} data in CSV")
             
         except Exception as e:
-            print(f"⚠️ Error marking account as registered: {e}")
+            print(f"⚠️ Error updating account in CSV: {e}")
+    
+    def _mark_account_registered(self, email):
+        """Mark an account as registered in CSV"""
+        self._update_account_in_csv(email, registered=True)
     
     def _generate_uk_phone(self):
         """Generate UK phone number in format +44 7XXX XXXXXX"""
@@ -639,6 +655,7 @@ class ZachBryanAutomation(DolphinAutomation):
         """Process a single account signup"""
         profile = None
         driver = None
+        success = False
         
         try:
             account = data_item
@@ -657,39 +674,43 @@ class ZachBryanAutomation(DolphinAutomation):
             # Run automation
             success = self._execute_site_automation(driver, site_config, account, task_number)
             
-            # Cleanup
-            profile_id = profile['id'] if profile else None
-            proxy_data = self.profile_proxy_map.get(profile_id) if profile_id else None
-            proxy_string = self.profile_proxy_string_map.get(profile_id) if profile_id else None
-            
-            if profile:
-                self._cleanup_profile_and_proxy(
-                    profile=profile,
-                    proxy=proxy_data,
-                    success=success,
-                    proxy_string=proxy_string,
-                    proxies_file=str(self.proxies_file) if hasattr(self, 'proxies_file') and self.proxies_file else None
-                )
-            
-            if profile_id and profile_id in self.profile_proxy_map:
-                del self.profile_proxy_map[profile_id]
-            if profile_id and profile_id in self.profile_proxy_string_map:
-                del self.profile_proxy_string_map[profile_id]
-            
             return success
             
         except Exception as e:
             print(f"❌ Error in automation process: {e}")
             import traceback
             traceback.print_exc()
+            success = False
             return False
             
         finally:
+            # Always cleanup driver
             if driver:
                 try:
                     driver.quit()
                 except:
                     pass
+            
+            # Always cleanup profile and proxy (na volledige signup)
+            if profile:
+                profile_id = profile['id'] if profile else None
+                proxy_data = self.profile_proxy_map.get(profile_id) if profile_id else None
+                proxy_string = self.profile_proxy_string_map.get(profile_id) if profile_id else None
+                
+                # Cleanup profile en proxy (altijd verwijderen na signup, ook bij failure)
+                self._cleanup_profile_and_proxy(
+                    profile=profile,
+                    proxy=proxy_data,
+                    success=success,  # Alleen bij success verwijderen, anders alleen stoppen
+                    proxy_string=proxy_string,
+                    proxies_file=str(self.proxies_file) if hasattr(self, 'proxies_file') and self.proxies_file else None
+                )
+                
+                # Clean up tracking dictionaries
+                if profile_id and profile_id in self.profile_proxy_map:
+                    del self.profile_proxy_map[profile_id]
+                if profile_id and profile_id in self.profile_proxy_string_map:
+                    del self.profile_proxy_string_map[profile_id]
     
     def _execute_site_automation(self, driver, site_config, account, task_number):
         """Execute Zach Bryan registration automation"""
@@ -748,6 +769,8 @@ class ZachBryanAutomation(DolphinAutomation):
             phone_input.clear()
             self.human_type(phone_input, phone_number)
             time.sleep(random.uniform(0.5, 1.0))
+            # Update CSV met phone number
+            self._update_account_in_csv(email, phone_number=phone_number)
             
             # Step 7: Fill first name
             print(f"[TASK-{task_number}] ✏️ Filling first name: {first_name}")
@@ -761,6 +784,8 @@ class ZachBryanAutomation(DolphinAutomation):
             first_name_input.clear()
             self.human_type(first_name_input, first_name)
             time.sleep(random.uniform(0.5, 1.0))
+            # Update CSV met first name
+            self._update_account_in_csv(email, first_name=first_name)
             
             # Step 8: Fill last name
             print(f"[TASK-{task_number}] ✏️ Filling last name: {last_name}")
@@ -774,6 +799,8 @@ class ZachBryanAutomation(DolphinAutomation):
             last_name_input.clear()
             self.human_type(last_name_input, last_name)
             time.sleep(random.uniform(0.5, 1.0))
+            # Update CSV met last name
+            self._update_account_in_csv(email, last_name=last_name)
             
             # Step 9: Fill email
             print(f"[TASK-{task_number}] ✉️ Filling email: {email}")
@@ -828,7 +855,7 @@ class ZachBryanAutomation(DolphinAutomation):
             if not otp_code or len(otp_code) != 4:
                 raise Exception(f"Invalid OTP code: {otp_code}")
             
-            # Step 15: Fill OTP code in 4 inputs
+            # Step 15: Fill OTP code in 4 inputs (sneller)
             print(f"[TASK-{task_number}] 🔢 Filling OTP code: {otp_code}")
             for i in range(4):
                 char = otp_code[i]
@@ -838,12 +865,13 @@ class ZachBryanAutomation(DolphinAutomation):
                     EC.presence_of_element_located((By.CSS_SELECTOR, selector))
                 )
                 driver.execute_script("arguments[0].scrollIntoViewIfNeeded();", otp_input)
-                time.sleep(random.uniform(0.2, 0.4))
+                time.sleep(random.uniform(0.1, 0.2))  # Sneller: 0.1-0.2s ipv 0.2-0.4s
                 self.human_click(driver, otp_input)
-                time.sleep(random.uniform(0.1, 0.2))
+                time.sleep(random.uniform(0.05, 0.1))  # Sneller: 0.05-0.1s ipv 0.1-0.2s
                 otp_input.clear()
-                self.human_type(otp_input, char)
-                time.sleep(random.uniform(0.2, 0.4))
+                # Direct type zonder human_type voor snelheid
+                otp_input.send_keys(char)
+                time.sleep(random.uniform(0.1, 0.2))  # Sneller: 0.1-0.2s ipv 0.2-0.4s
             
             # Step 16: Wait for Verify button to be enabled
             print(f"[TASK-{task_number}] ⏳ Waiting for Verify button to be enabled...")
@@ -916,6 +944,8 @@ class ZachBryanAutomation(DolphinAutomation):
             # Stop IMAP scanner when done
             if self.imap_helper:
                 self.imap_helper.stop_background_otp_scanner()
+            # Stop profile timeout cleanup
+            self._stop_profile_timeout_cleanup()
 
 
 def main():
@@ -956,6 +986,9 @@ def main():
         # Ensure IMAP scanner is stopped
         if automation and automation.imap_helper:
             automation.imap_helper.stop_background_otp_scanner()
+        # Ensure profile timeout cleanup is stopped
+        if automation:
+            automation._stop_profile_timeout_cleanup()
 
 
 if __name__ == "__main__":

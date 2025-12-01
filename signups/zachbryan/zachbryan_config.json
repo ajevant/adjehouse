@@ -24,7 +24,7 @@
         "proxies": "proxies.txt"
     },
     "automation": {
-        "threads": 5,
+        "threads": 10,
         "timeout_seconds": 45,
         "auto_restart_runs": 3,
         "cleanup_on_start": true,

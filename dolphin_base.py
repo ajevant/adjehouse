@@ -100,10 +100,16 @@ class DolphinAutomation:
         self.base_url = config.get('dolphin_api_url', self.remote_api_url)
         self.profiles = []
         self.proxies = []
-        self.active_profiles = {}
+        self.active_profiles = {}  # {profile_id: {'start_time': timestamp, 'proxy_id': proxy_id}}
         self.proxy_lock = threading.Lock()
         self.profile_lock = threading.Lock()
         self.browser_semaphore = None  # Will be set in run_automation
+        self.profile_timeout_seconds = 600  # 10 minuten timeout
+        self.cleanup_thread_running = False
+        self.cleanup_thread = None
+        
+        # Start background cleanup thread voor timeout
+        self._start_profile_timeout_cleanup()
         
         # Default profile config (zoals in config.ts)
         # Detect OS and use appropriate platform
@@ -1093,6 +1099,12 @@ class DolphinAutomation:
                     if port:
                         # Return dict with port - we'll construct debugger address in create_driver
                         print(f"✅ Profile {profile_id} started successfully (Port: {port}, wsEndpoint: {ws_url.get('wsEndpoint', 'N/A')[:30]}...)")
+                        # Track profile start time
+                        with self.profile_lock:
+                            self.active_profiles[profile_id] = {
+                                'start_time': time.time(),
+                                'proxy_id': None  # Will be set when driver is created
+                            }
                         return ws_url
                     else:
                         raise Exception(f"Automation dict missing 'port' field. Got: {ws_url}")
@@ -1100,6 +1112,12 @@ class DolphinAutomation:
                 # If it's a string (old format), return as-is
                 if isinstance(ws_url, str):
                     print(f"✅ Profile {profile_id} started successfully (WebSocket URL: {ws_url[:50]}...)")
+                    # Track profile start time
+                    with self.profile_lock:
+                        self.active_profiles[profile_id] = {
+                            'start_time': time.time(),
+                            'proxy_id': None  # Will be set when driver is created
+                        }
                     return ws_url
                 
                 # Unknown format
@@ -1118,6 +1136,88 @@ class DolphinAutomation:
         
         # Should never reach here, but just in case
         raise Exception(f"Failed to start profile {profile_id} after {max_retries} attempts")
+    
+    def _start_profile_timeout_cleanup(self):
+        """Start background thread voor profile timeout cleanup (10 minuten)"""
+        if self.cleanup_thread_running:
+            return
+        
+        self.cleanup_thread_running = True
+        self.cleanup_thread = threading.Thread(
+            target=self._profile_timeout_cleanup_loop,
+            daemon=True,
+            name="ProfileTimeoutCleanup"
+        )
+        self.cleanup_thread.start()
+        print(f"🔄 Profile timeout cleanup gestart (verwijdert profielen na {self.profile_timeout_seconds}s)")
+    
+    def _stop_profile_timeout_cleanup(self):
+        """Stop background cleanup thread"""
+        if self.cleanup_thread_running:
+            self.cleanup_thread_running = False
+            if self.cleanup_thread:
+                self.cleanup_thread.join(timeout=5)
+            print("🛑 Profile timeout cleanup gestopt")
+    
+    def _profile_timeout_cleanup_loop(self):
+        """Background loop die oude profielen verwijdert"""
+        while self.cleanup_thread_running:
+            try:
+                current_time = time.time()
+                profiles_to_cleanup = []
+                
+                # Check alle actieve profielen
+                with self.profile_lock:
+                    for profile_id, profile_info in list(self.active_profiles.items()):
+                        start_time = profile_info.get('start_time', 0)
+                        age_seconds = current_time - start_time
+                        
+                        if age_seconds >= self.profile_timeout_seconds:
+                            profiles_to_cleanup.append((profile_id, profile_info))
+                
+                # Cleanup oude profielen
+                for profile_id, profile_info in profiles_to_cleanup:
+                    try:
+                        start_time = profile_info.get('start_time', 0)
+                        age_seconds = current_time - start_time
+                        print(f"⏰ Profile {profile_id} is {int(age_seconds)}s oud (> {self.profile_timeout_seconds}s) - automatisch verwijderen...")
+                        
+                        # Stop profile
+                        try:
+                            self.stop_profile(profile_id)
+                        except:
+                            pass
+                        
+                        # Delete profile
+                        try:
+                            self.delete_profile(profile_id)
+                            print(f"✅ Profile {profile_id} automatisch verwijderd (timeout)")
+                        except:
+                            pass
+                        
+                        # Delete proxy if exists
+                        proxy_id = profile_info.get('proxy_id')
+                        if proxy_id:
+                            try:
+                                self.delete_proxy(proxy_id)
+                                print(f"✅ Proxy {proxy_id} automatisch verwijderd (timeout)")
+                            except:
+                                pass
+                        
+                        # Remove from tracking
+                        with self.profile_lock:
+                            if profile_id in self.active_profiles:
+                                del self.active_profiles[profile_id]
+                                
+                    except Exception as e:
+                        print(f"⚠️ Error tijdens timeout cleanup van profile {profile_id}: {e}")
+                
+            except Exception as e:
+                # Silent fail in background thread
+                pass
+            
+            # Check elke minuut
+            time.sleep(60)
     
     def stop_profile(self, profile_id):
         """Stop een browser profile (via LOCAL API) - uses GET method with NO headers"""
@@ -2150,8 +2250,16 @@ class DolphinAutomation:
             if not profile:
                 return False
             
+            profile_id = profile['id']
+            proxy_id = proxy.get('id') if proxy else None
+            
+            # Update profile tracking with proxy_id
+            with self.profile_lock:
+                if profile_id in self.active_profiles:
+                    self.active_profiles[profile_id]['proxy_id'] = proxy_id
+            
             # Create driver
-            driver = self.create_driver(profile['id'])
+            driver = self.create_driver(profile_id)
             if not driver:
                 return False
             
@@ -2196,6 +2304,11 @@ class DolphinAutomation:
         
         if not profile_id:
             return
+        
+        # Remove from active profiles tracking
+        with self.profile_lock:
+            if profile_id in self.active_profiles:
+                del self.active_profiles[profile_id]
         
         # Stop profile first
         try:
