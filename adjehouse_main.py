@@ -27,7 +27,7 @@ except ImportError:
     DISCORD_AVAILABLE = False
 
 # Version info - extract from executable name only (version.txt is no longer used)
-VERSION = "BUILD-208"  # Default fallback
+VERSION = "BUILD-209"  # Default fallback
 try:
     if getattr(sys, 'frozen', False):
         # Running as compiled executable - extract version from filename
@@ -966,8 +966,8 @@ def ensure_settings_exist():
                 "threads": 10,
                 "timeout_seconds": 45,
                 "auto_restart_runs": 3,
-                "cleanup_on_start": true,
-                "force_cleanup_completed": false
+                "cleanup_on_start": True,
+                "force_cleanup_completed": False
             },
             "discord": {
                 "finished_webhook": ""
