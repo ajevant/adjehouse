@@ -458,12 +458,21 @@ class ZachBryanAutomation(DolphinAutomation):
         accounts_csv = base_dir / files_config.get('accounts', 'emails.csv')
         self.accounts_csv = accounts_csv
         
+        # Create example CSV if it doesn't exist
+        if not accounts_csv.exists():
+            self._create_example_csv(accounts_csv)
+        
         # Load accounts
         self.accounts = self._load_accounts_from_csv(accounts_csv)
         
         # Load proxies
         proxies_file = base_dir / files_config.get('proxies', 'proxies.txt')
         self.proxies_file = proxies_file
+        
+        # Create example proxies file if it doesn't exist
+        if not proxies_file.exists():
+            self._create_example_proxies_file(proxies_file)
+        
         self.proxy_strings = self._load_from_file(proxies_file, "proxies")
         
         # Initialize IMAP helper
@@ -577,6 +586,39 @@ class ZachBryanAutomation(DolphinAutomation):
     def _mark_account_registered(self, email):
         """Mark an account as registered in CSV"""
         self._update_account_in_csv(email, registered=True)
+    
+    def _create_example_csv(self, csv_file):
+        """Create example CSV file with headers if it doesn't exist"""
+        try:
+            with open(csv_file, 'w', encoding='utf-8', newline='') as f:
+                writer = csv.DictWriter(f, fieldnames=['email', 'first_name', 'last_name', 'phone_number', 'registered', 'timestamp'])
+                writer.writeheader()
+                # Add one example row
+                writer.writerow({
+                    'email': 'example@gmail.com',
+                    'first_name': 'John',
+                    'last_name': 'Doe',
+                    'phone_number': '(555) 123-4567',
+                    'registered': 'false',
+                    'timestamp': ''
+                })
+            print(f"✅ Created example CSV file: {csv_file}")
+            print(f"   📝 Please edit this file and add your email addresses")
+        except Exception as e:
+            print(f"⚠️ Error creating example CSV: {e}")
+    
+    def _create_example_proxies_file(self, proxies_file):
+        """Create example proxies file if it doesn't exist"""
+        try:
+            with open(proxies_file, 'w', encoding='utf-8') as f:
+                f.write("# Proxy format: ip:port:username:password\n")
+                f.write("# Example:\n")
+                f.write("# 123.45.67.89:8080:user:pass\n")
+                f.write("# 98.76.54.32:3128:myuser:mypass\n")
+            print(f"✅ Created example proxies file: {proxies_file}")
+            print(f"   📝 Please edit this file and add your proxy servers")
+        except Exception as e:
+            print(f"⚠️ Error creating example proxies file: {e}")
     
     def _generate_uk_phone(self):
         """Generate UK phone number in format +44 7XXX XXXXXX"""

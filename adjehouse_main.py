@@ -27,7 +27,7 @@ except ImportError:
     DISCORD_AVAILABLE = False
 
 # Version info - extract from executable name only (version.txt is no longer used)
-VERSION = "BUILD-207"  # Default fallback
+VERSION = "BUILD-208"  # Default fallback
 try:
     if getattr(sys, 'frozen', False):
         # Running as compiled executable - extract version from filename
@@ -932,6 +932,88 @@ def ensure_settings_exist():
                 f.write("# Proxy format: ip:port:username:password\n")
                 f.write("# Example:\n")
                 f.write("# 127.0.0.1:8080:user:pass\n")
+        except Exception as e:
+            pass
+    
+    # Create default Zach Bryan config.json if it doesn't exist
+    ZACHBRYAN_CONFIG_FILE = ZACHBRYAN_DIR / 'zachbryan_config.json'
+    if not ZACHBRYAN_CONFIG_FILE.exists():
+        default_zachbryan_config = {
+            "site_name": "Zach Bryan Presale",
+            "site_url": "https://zachbryanpresale.com/",
+            "dolphin": {
+                "token": "YOUR_DOLPHIN_TOKEN_HERE",
+                "remote_api_url": "https://dolphin-anty-api.com",
+                "api_url": "http://localhost:3001/v1.0"
+            },
+            "imap": {
+                "email": "your.email@gmail.com",
+                "password": "your_app_specific_password",
+                "server": "imap.gmail.com",
+                "port": 993,
+                "folder": "INBOX",
+                "sender": "concerts@events.aegpresents.com",
+                "subject_phrase": "Your One-Time Passcode",
+                "code_timeout_seconds": 60,
+                "code_poll_interval": 10,
+                "otp_scan_interval": 10
+            },
+            "files": {
+                "accounts": "emails.csv",
+                "proxies": "proxies.txt"
+            },
+            "automation": {
+                "threads": 10,
+                "timeout_seconds": 45,
+                "auto_restart_runs": 3,
+                "cleanup_on_start": true,
+                "force_cleanup_completed": false
+            },
+            "discord": {
+                "finished_webhook": ""
+            },
+            "_notes": {
+                "emails.csv": "Kolommen: email,first_name,last_name,phone_number,registered,timestamp. Gebruik 'false' voor nog te verwerken accounts.",
+                "proxies.txt": "Formaat: ip:port:username:password",
+                "imap": "Gebruik een app-wachtwoord voor Gmail. De OTP code wordt automatisch uit de email gehaald.",
+                "phone_number": "US format: (XXX) XXX-XXXX. Wordt automatisch gegenereerd als leeg.",
+                "registered": "true/false - wordt op true gezet na succesvolle registratie"
+            }
+        }
+        try:
+            with open(ZACHBRYAN_CONFIG_FILE, 'w', encoding='utf-8') as f:
+                json.dump(default_zachbryan_config, f, indent=4, ensure_ascii=False)
+        except Exception as e:
+            pass
+    
+    # Create default Zach Bryan emails.csv if it doesn't exist
+    ZACHBRYAN_EMAILS_CSV = ZACHBRYAN_DIR / 'emails.csv'
+    if not ZACHBRYAN_EMAILS_CSV.exists():
+        try:
+            import csv
+            with open(ZACHBRYAN_EMAILS_CSV, 'w', encoding='utf-8', newline='') as f:
+                writer = csv.DictWriter(f, fieldnames=['email', 'first_name', 'last_name', 'phone_number', 'registered', 'timestamp'])
+                writer.writeheader()
+                writer.writerow({
+                    'email': 'example@gmail.com',
+                    'first_name': 'John',
+                    'last_name': 'Doe',
+                    'phone_number': '(555) 123-4567',
+                    'registered': 'false',
+                    'timestamp': ''
+                })
+        except Exception as e:
+            pass
+    
+    # Create default Zach Bryan proxies.txt if it doesn't exist
+    ZACHBRYAN_PROXIES = ZACHBRYAN_DIR / 'proxies.txt'
+    if not ZACHBRYAN_PROXIES.exists():
+        try:
+            with open(ZACHBRYAN_PROXIES, 'w', encoding='utf-8') as f:
+                f.write("# Proxy format: ip:port:username:password\n")
+                f.write("# Example:\n")
+                f.write("# 123.45.67.89:8080:user:pass\n")
+                f.write("# 98.76.54.32:3128:myuser:mypass\n")
         except Exception as e:
             pass
     
