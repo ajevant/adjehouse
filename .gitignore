@@ -5,3 +5,5 @@
 !.gitignore
 !adjehouse.exe
 !*.exe
+!dist/
+!dist/*.exe
